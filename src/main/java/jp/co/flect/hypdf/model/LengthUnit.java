@@ -13,4 +13,7 @@ public class LengthUnit {
 		this.n = n;
 		this.unit = unit;
 	}
+
+	@Override
+	public String toString() { return n + unit;}
 }
