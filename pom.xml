@@ -6,7 +6,7 @@
 	
 	<groupId>jp.co.flect</groupId>
 	<artifactId>hypdf4j</artifactId>
-	<version>0.9</version>
+	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>hypdf4j</name>
