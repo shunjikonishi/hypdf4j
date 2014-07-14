@@ -2,16 +2,15 @@ package jp.co.flect.hypdf;
 
 import java.io.IOException;
 import java.io.File;
-import java.io.InputStream;
-import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.HashMap;
 import java.net.URL;
 
 import jp.co.flect.hypdf.transport.TransportFactory;
 import jp.co.flect.hypdf.transport.Transport;
-import jp.co.flect.hypdf.model.HtmlToPdfOption;
+import jp.co.flect.hypdf.model.HyPDFOption;
 import jp.co.flect.hypdf.model.JobStatus;
+import jp.co.flect.hypdf.model.PdfResponse;
 
 public class HyPDF {
 	
@@ -20,12 +19,6 @@ public class HyPDF {
 	private String password;
 	private Transport transport;
 	private boolean testMode = false;
-
-	/*
-	static {
-		System.setProperty ("jsse.enableSNIExtension", "false");
-	}
-	*/
 
 	public HyPDF(String username, String password) {
 		this.username = username;
@@ -48,11 +41,11 @@ public class HyPDF {
 		return params;
 	}
 
-	public InputStream htmlToPdf(String content) throws IOException {
+	public PdfResponse htmlToPdf(String content) throws IOException {
 		return htmlToPdf(content, null);
 	}
 
-	public InputStream htmlToPdf(String content, HtmlToPdfOption option) throws IOException {
+	public PdfResponse htmlToPdf(String content, HyPDFOption.HtmlToPdf option) throws IOException {
 		Map<String, Object> params = createParams();
 		params.put("content", content);
 		if (option != null) {
@@ -61,34 +54,11 @@ public class HyPDF {
 		return transport.streamRequest(URL_BASE + "htmltopdf", params);
 	}
 
-	public void htmlToPdfFile(String content, File outputFile) throws IOException {
-		htmlToPdfFile(content, outputFile, null);
-	}
-
-	public void htmlToPdfFile(String content, File outputFile, HtmlToPdfOption option) throws IOException {
-		InputStream is = htmlToPdf(content, option);
-		try {
-			FileOutputStream os = new FileOutputStream(outputFile);
-			try {
-				byte[] buf = new byte[8192];
-				int n = is.read(buf);
-				while (n != -1) {
-					os.write(buf, 0, n);
-					n = is.read(buf);
-				}
-			} finally {
-				os.close();
-			}
-		} finally {
-			is.close();
-		}
-	}
-
 	public String notifyHtmlToPdf(String content, URL callbackUrl) throws IOException {
 		return notifyHtmlToPdf(content, callbackUrl, null);
 	}
 
-	public String notifyHtmlToPdf(String content, URL callbackUrl, HtmlToPdfOption option) throws IOException {
+	public String notifyHtmlToPdf(String content, URL callbackUrl, HyPDFOption.HtmlToPdf option) throws IOException {
 		Map<String, Object> params = createParams();
 		params.put("content", content);
 		params.put("callback", callbackUrl.toString());
@@ -111,5 +81,45 @@ public class HyPDF {
 		Map<String, Object> params = createParams();
 		return transport.jsonRequest(URL_BASE + "pdfinfo", params, file);
 	}
+
+	public Map<String, Object> pdfToText(File file) throws IOException {
+		return pdfToText(file, null);
+	}
+
+	public Map<String, Object> pdfToText(File file, HyPDFOption.PdfToText option) throws IOException {
+		Map<String, Object> params = createParams();
+		if (option != null) {
+			option.apply(params);
+		}
+		return transport.jsonRequest(URL_BASE + "pdftotext", params, file);
+	}
+
+	public PdfResponse pdfExtract(File file, int firstPage, int lastPage) throws IOException {
+		HyPDFOption.PdfExtract option = new HyPDFOption.PdfExtract();
+		option.first_page = firstPage;
+		option.last_page = lastPage;
+		return pdfExtract(file, option);
+	}
+
+	public PdfResponse pdfExtract(File file, HyPDFOption.PdfExtract option) throws IOException {
+		Map<String, Object> params = createParams();
+		if (option != null) {
+			option.apply(params);
+		}
+		return transport.streamRequest(URL_BASE + "pdfextract", params, file);
+	}
+
+	public PdfResponse pdfUnite(File... files) throws IOException {
+		return pdfUnite(null, files);
+	}
+
+	public PdfResponse pdfUnite(HyPDFOption.PdfExtract option, File... files) throws IOException {
+		Map<String, Object> params = createParams();
+		if (option != null) {
+			option.apply(params);
+		}
+		return transport.streamRequest(URL_BASE + "pdfunite", params, files);
+	}
+
 }
 

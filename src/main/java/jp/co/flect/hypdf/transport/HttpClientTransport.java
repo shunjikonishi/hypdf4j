@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.nio.charset.Charset;
 import jp.co.flect.hypdf.json.JsonUtils;
 import jp.co.flect.hypdf.HyPDFException;
+import jp.co.flect.hypdf.model.PdfResponse;
 
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -26,6 +27,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.util.EntityUtils;
+import org.apache.http.Header;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -41,7 +43,7 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 public class HttpClientTransport extends AbstractTransport {
 	
 	private HttpClient client = null;
-	private boolean ignoreSSLValidation = false;
+	private boolean ignoreSSL = false;
 	
 	/**
 	 * HyPDF uses certificate from StartCom.
@@ -50,16 +52,16 @@ public class HttpClientTransport extends AbstractTransport {
 	 * If you want to use HttpClient, you should install StartCom certificate to keystore by yourself.
 	 * Or set this property true.
 	 */
-	public boolean isIgnoreHostNameValidation() { return this.ignoreSSLValidation;}
-	public void setIgnoreHostNameValidation(boolean b) { this.ignoreSSLValidation = b;}
+	public boolean isIgnoreHostNameVerification() { return this.ignoreSSL;}
+	public void setIgnoreHostNameVerification(boolean b) { this.ignoreSSL = b;}
+
+	private String getHeaderValue(HttpResponse res, String name) {
+		Header h = res.getFirstHeader(name);
+		return h == null ? null : h.getValue();
+	}
 
 	private void checkResponse(HttpResponse res) throws IOException {
 		int status = res.getStatusLine().getStatusCode();
-System.out.println("checkResponse: " + status + ", " + res.getEntity().getContentType());
-org.apache.http.Header[] headers = res.getAllHeaders();
-for (org.apache.http.Header h: headers) {
-	System.out.println(h);
-}
 		if (status != 200) {
 			String body = EntityUtils.toString(res.getEntity(), "utf-8");
 			String msg = null;
@@ -73,14 +75,25 @@ for (org.apache.http.Header h: headers) {
 		}
 	}
 	
-	public InputStream streamRequest(String url, Map<String, Object> params, File... pdfFiles) throws IOException {
+	public PdfResponse streamRequest(String url, Map<String, Object> params, File... pdfFiles) throws IOException {
 		HttpResponse res = null;
 		if (pdfFiles == null || pdfFiles.length == 0) {
 			res = simpleRequest(url, params);
 		} else {
 			res = multipartRequest(url, params, pdfFiles);
 		}
-		return res.getEntity().getContent();
+		int pages = 0;
+		try {
+			String pagesStr = getHeaderValue(res, "hypdf-pages");
+			if (pagesStr != null) {
+				pages = Integer.parseInt(pagesStr);
+			}
+		} catch (NumberFormatException e) {
+
+		}
+		String pageSize = getHeaderValue(res, "hypdf-page-size");
+		String pdfVersion = getHeaderValue(res, "hypdf-pdf-version");
+		return new PdfResponse(pages, pageSize, pdfVersion, res.getEntity().getContent());
 	}
 	
 	public Map<String, Object> jsonRequest(String url, Map<String, Object> params, File... pdfFiles) throws IOException {
@@ -155,7 +168,7 @@ for (org.apache.http.Header h: headers) {
 			HttpConnectionParams.setSoTimeout(params, getSoTimeout());
 		
 			DefaultHttpClient client = null;
-			if (this.ignoreSSLValidation) {
+			if (this.ignoreSSL) {
 				try {
 					TrustStrategy trustStrategy = new TrustStrategy() {
 						@Override
