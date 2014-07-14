@@ -62,7 +62,7 @@ public class HyPDFTest {
 		return hypdf;
 	}
 
-//	@Test
+	@Test
 	public void loginError() {
 		log("loginError");
 		try {
@@ -79,7 +79,7 @@ public class HyPDFTest {
 		}
 	}
 
-//	@Test
+	@Test
 	public void simpleHtml() {
 		long t = System.currentTimeMillis();
 		log("simpleHtml");
@@ -107,7 +107,7 @@ public class HyPDFTest {
 		}
 	}
 
-//	@Test
+	@Test
 	public void callback() {
 		log("callback");
 		HyPDF hypdf = createHyPDF(USERNAME, PASSWORD);
@@ -127,7 +127,7 @@ public class HyPDFTest {
 		}
 	}
 
-//	@Test
+	@Test
 	public void pdfInfo() {
 		log("pdfInfo");
 		HyPDF hypdf = createHyPDF(USERNAME, PASSWORD);
@@ -141,7 +141,7 @@ public class HyPDFTest {
 		}
 	}
 
-//	@Test
+	@Test
 	public void pdfToTest() {
 		log("pdfToText");
 		HyPDF hypdf = createHyPDF(USERNAME, PASSWORD);
@@ -155,7 +155,7 @@ public class HyPDFTest {
 		}
 	}
 
-	// @Test
+	@Test
 	public void pdfUnite() {
 		log("pdfUnite");
 		HyPDF hypdf = createHyPDF(USERNAME, PASSWORD);
