@@ -13,6 +13,8 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntity;
@@ -48,8 +50,8 @@ public class HttpClientTransport extends AbstractTransport {
 	 * If you want to use HttpClient, you should install StartCom certificate to keystore by yourself.
 	 * Or set this property true.
 	 */
-	public boolean isIgnoreSSLValidation() { return this.ignoreSSLValidation;}
-	public void setIgnoreSSLValidation(boolean b) { this.ignoreSSLValidation = b;}
+	public boolean isIgnoreHostNameValidation() { return this.ignoreSSLValidation;}
+	public void setIgnoreHostNameValidation(boolean b) { this.ignoreSSLValidation = b;}
 
 	private void checkResponse(HttpResponse res) throws IOException {
 		int status = res.getStatusLine().getStatusCode();
@@ -94,13 +96,28 @@ for (org.apache.http.Header h: headers) {
 	
 	private HttpResponse simpleRequest(String url, Map<String, Object> params) throws IOException {
 		HttpClient client = getHttpClient();
-		HttpPost method = new HttpPost(url);
+		HttpUriRequest request = null;
+		if (url.endsWith("/jobstatus")) {
+			StringBuilder buf = new StringBuilder();
+			buf.append(url);
+			char delimiter = '?';
+			for (Map.Entry<String, Object> entry : params.entrySet()) {
+				buf.append(delimiter)
+					.append(entry.getKey())
+					.append("=")
+					.append(entry.getValue());
+				delimiter = '&';
+			}
+			request = new HttpGet(buf.toString());
+		} else {
+			HttpPost method = new HttpPost(url);
 
-		String json = JsonUtils.serialize(params);
-		method.setEntity(new StringEntity(json));
-		method.setHeader("content-type", "application/json");
-
-		HttpResponse res = client.execute(method);
+			String json = JsonUtils.serialize(params);
+			method.setEntity(new StringEntity(json));
+			method.setHeader("content-type", "application/json");
+			request = method;
+		}
+		HttpResponse res = client.execute(request);
 		checkResponse(res);
 		return res;
 	}

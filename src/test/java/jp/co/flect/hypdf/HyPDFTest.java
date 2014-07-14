@@ -10,10 +10,13 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.net.URL;
 
 import jp.co.flect.hypdf.transport.Transport;
 import jp.co.flect.hypdf.transport.TransportFactory;
 import jp.co.flect.hypdf.transport.HttpClientTransport;
+import jp.co.flect.hypdf.model.HtmlToPdfOption;
+import jp.co.flect.hypdf.model.JobStatus;
 
 public class HyPDFTest {
 
@@ -56,7 +59,7 @@ public class HyPDFTest {
 		doTest();
 	}
 
-	@Test
+	//@Test
 	public void testAsyncHttp() {
 		log("*** Test AsyncHttp");
 		TransportFactory.setDefaultFactory(new TransportFactory.AsyncHttpClientTransportFactory());
@@ -67,7 +70,9 @@ public class HyPDFTest {
 		loginError();
 
 		HyPDF hypdf = createHyPDF(USERNAME, PASSWORD);
-		simpleHtml(hypdf);
+		//simpleHtml(hypdf);
+		//callback(hypdf);
+		pdfInfo(hypdf);
 	}
 
 	private HyPDF createHyPDF(String username, String password) {
@@ -75,7 +80,7 @@ public class HyPDFTest {
 		hypdf.setTestMode(true);
 		Transport t = hypdf.getTransport();
 		if (t instanceof HttpClientTransport) {
-			((HttpClientTransport)t).setIgnoreSSLValidation(true);
+			((HttpClientTransport)t).setIgnoreHostNameValidation(true);
 		}
 		return hypdf;
 	}
@@ -101,7 +106,37 @@ public class HyPDFTest {
 		String content = "https://excel-report2.herokuapp.com/report/html/sample/chart?score=50&score=40&score=60&score=70&score=80&score=82&score=73&score=94&score=100&score=62&score=72&score=43&score=22&score=84&score=63&app.print=false&app.download=false&app.webfont=true&app.border=false";
 		File file = new File(OUTPUT_DIR, "simpleHtml.pdf");
 		try {
-			hypdf.htmlToPdfFile(content, file);
+			HtmlToPdfOption option = new HtmlToPdfOption();
+			hypdf.htmlToPdfFile(content, file, option);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+
+	private void callback(HyPDF hypdf) {
+		log("callback");
+		String content = "https://excel-report2.herokuapp.com/report/html/sample/chart?score=50&score=40&score=60&score=70&score=80&score=82&score=73&score=94&score=100&score=62&score=72&score=43&score=22&score=84&score=63&app.print=false&app.download=false&app.webfont=true&app.border=false";
+		try {
+			URL url = new URL("http://flect-panda.herokuapp.com/");
+			String jobId = hypdf.notifyHtmlToPdf(content, url);
+			System.out.println("job_id: " + jobId);
+			assertNotNull(jobId);
+			JobStatus status = hypdf.jobstatus(jobId);
+			System.out.println("status: " + status);
+			assertNotNull(status);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+
+	private void pdfInfo(HyPDF hypdf) {
+		log("pdfInfo");
+		File file = new File(OUTPUT_DIR, "simpleHtml.pdf");
+		try {
+			Map<String, Object> ret = hypdf.pdfInfo(file);
+			System.out.println(ret);
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail();

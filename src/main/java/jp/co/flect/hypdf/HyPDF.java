@@ -6,10 +6,12 @@ import java.io.InputStream;
 import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.HashMap;
+import java.net.URL;
 
 import jp.co.flect.hypdf.transport.TransportFactory;
 import jp.co.flect.hypdf.transport.Transport;
 import jp.co.flect.hypdf.model.HtmlToPdfOption;
+import jp.co.flect.hypdf.model.JobStatus;
 
 public class HyPDF {
 	
@@ -82,5 +84,32 @@ public class HyPDF {
 		}
 	}
 
+	public String notifyHtmlToPdf(String content, URL callbackUrl) throws IOException {
+		return notifyHtmlToPdf(content, callbackUrl, null);
+	}
+
+	public String notifyHtmlToPdf(String content, URL callbackUrl, HtmlToPdfOption option) throws IOException {
+		Map<String, Object> params = createParams();
+		params.put("content", content);
+		params.put("callback", callbackUrl.toString());
+		if (option != null) {
+			option.apply(params);
+		}
+		Map<String, Object> json = transport.jsonRequest(URL_BASE + "htmltopdf", params);
+		return (String)json.get("job_id");
+	}
+
+	public JobStatus jobstatus(String jobId) throws IOException {
+		Map<String, Object> params = createParams();
+		params.put("job_id", jobId);
+		Map<String, Object> json = transport.jsonRequest(URL_BASE + "jobstatus", params);
+		String status = (String)json.get("status");
+		return JobStatus.valueOf(status);
+	}
+
+	public Map<String, Object> pdfInfo(File file) throws IOException {
+		Map<String, Object> params = createParams();
+		return transport.jsonRequest(URL_BASE + "pdfinfo", params, file);
+	}
 }
 

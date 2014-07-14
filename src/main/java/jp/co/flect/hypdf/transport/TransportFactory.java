@@ -6,6 +6,7 @@ public abstract class TransportFactory {
 
 	static {
 		TransportFactory ret = null;
+		/*
 		if (ret == null) {
 			try {
 				Class.forName("com.ning.http.client.AsyncHttpClient");
@@ -13,6 +14,7 @@ public abstract class TransportFactory {
 			} catch (Exception e) {
 			}
 		}
+		*/
 		if (ret == null) {
 			try {
 				Class.forName("org.apache.http.impl.client.DefaultHttpClient");
